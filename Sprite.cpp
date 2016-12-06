@@ -39,11 +39,13 @@ int Sprite::getImageIndex() const noexcept {
 void Sprite::move() noexcept {}
 
 bool Sprite::hits(const Sprite& other) const noexcept {
+  // creates hitboxes to calculate whether the two sprites collide
   vector<int> hitbox1 = {x_, x_ + width_, y_, y_ + width_};
   vector<int> hitbox2 = {other.getXCoordinate(),
 			 other.getXCoordinate() + other.getWidth(),
 			 other.getYCoordinate(),
 			 other.getYCoordinate() + other.getHeight()};
+  // uses the hitboxes to return the collision status
   return (hitbox1.at(0) < hitbox2.at(1) &&
 	  hitbox1.at(1) > hitbox2.at(0) &&
 	  hitbox1.at(2) < hitbox2.at(3) &&

@@ -41,6 +41,7 @@ void Player::setH(int v) noexcept {
 void Player::jump() noexcept {
   if (!inAir_) {
     speedV_ = -20;
+    
     // to give a little boost to the beginning
     // of the jump
     y_ -= 20;
@@ -67,7 +68,7 @@ bool Player::touchingGround(vector<shared_ptr<Sprite>> sprites) noexcept {
       if(!(s->hits(*this) && ((x_ + width_ - (s->getXCoordinate())) < 10) && (s->getImageIndex() == 4)) &&
 	 !(s->hits(*this) && (((s->getXCoordinate() + s->getWidth()) - x_) < 10)) &&
 	 (s->hits(*this) && ((y_ + height_ - (s->getYCoordinate())) < 35) && (s->getImageIndex() == 4))) {
-	// if so it will reset you ycor, your speed and your in air status
+	// if so it will reset you ycor, your speed and your in-air status
 	y_ = s->getYCoordinate() - height_ + 1;
 	speedV_ = 0;
 	inAir_ = false;
@@ -75,6 +76,7 @@ bool Player::touchingGround(vector<shared_ptr<Sprite>> sprites) noexcept {
       }
     }
   }
+  // returns whether or not the player is in the air
   return inAir_;
 }
 
@@ -100,18 +102,24 @@ bool Player::touchingWall(vector<shared_ptr<Sprite>> sprites) noexcept {
 	  if(s->hits(*this) && (((s->getXCoordinate() + s->getWidth()) - x_) < 10) && (s->getImageIndex() == 4)) {
 	    x_ = s->getXCoordinate() + s->getWidth() - 1;
 	    speedH_ = 0;
+
+	    // returns true if it's touching a wall
 	    return true;
 	  }
 	}
       }
     }
   }
+  // otherwise returns false
   return false;
 }
 
 bool Player::touchingObstacles(vector<shared_ptr<Sprite>>& sprites) const noexcept {
+  // iterates through the list of sprites
   for(auto iter = sprites.begin(); iter != sprites.end(); ++iter) {
+    // if the sprite is an obstacle and is colliding
     if ((((*iter)->getImageIndex() == 5) || ((*iter)->getImageIndex() == 6)) && ((*iter)->hits(*this))) {
+      // erases the sprite from the list and returns true
       sprites.erase(iter);
       return true;
     }
@@ -120,8 +128,11 @@ bool Player::touchingObstacles(vector<shared_ptr<Sprite>>& sprites) const noexce
 }
 
 bool Player::touchingHealth(vector<shared_ptr<Sprite>>& sprites) const noexcept {
+  // iterates through the list of sprites
   for(auto iter = sprites.begin(); iter != sprites.end(); ++iter) {
+    // if the sprite is a health pickup and is colliding
     if (((*iter)->getImageIndex() == 7) && ((*iter)->hits(*this))) {
+      // erases the sprite from the list and returns true
       sprites.erase(iter);
       return true;
     }
@@ -130,8 +141,11 @@ bool Player::touchingHealth(vector<shared_ptr<Sprite>>& sprites) const noexcept 
 }
 
 bool Player::touchingCoin(vector<shared_ptr<Sprite>>& sprites) const noexcept {
+  // iterates through the list of sprites
   for(auto iter = sprites.begin(); iter != sprites.end(); ++iter) {
+    // if the sprite is a coin and is colliding
     if (((*iter)->getImageIndex() == 8) && ((*iter)->hits(*this))) {
+      // erases the sprite from the list and returns true
       sprites.erase(iter);
       return true;
     }

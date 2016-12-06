@@ -5,8 +5,9 @@ namespace medieval {
 
 /**
  * Relevent Event Enumeration.
- * @author 
+ * @author Alex Zilbersher & Ryan Malloney
  */
+  
 enum class RelevantEvent {
   /** No relevant event occurred. */ NONE,
   /** The user requested that the program quit. */ QUIT

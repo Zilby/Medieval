@@ -11,6 +11,20 @@ World::World() {
     throw domain_error(string("SDL Initialization failed due to: ") + SDL_GetError());
   }
 
+  // Initialize ttf
+  
+  if (TTF_Init() < 0) {
+    throw domain_error(string("TTF init failed"));
+  }
+
+  // Initialize our ttf font
+  
+  textColor_ = { 255, 255, 255, 0 };
+  font_ = TTF_OpenFont("graphics/font.ttf", 50);
+  if (!font_) {
+    throw domain_error ("Couldn't find graphics/font.ttf");
+  }
+
   // Construct the screen window
 
   window_ = SDL_CreateWindow("Display", SDL_WINDOWPOS_UNDEFINED, 
@@ -68,6 +82,7 @@ void World::close() noexcept {
 
   // The last step is to quit SDL
 
+  TTF_Quit();
   SDL_Quit();
 }
 
@@ -119,6 +134,8 @@ RelevantEvent World::checkForRelevantEvent() noexcept {
       return RelevantEvent::QUIT;
     case SDL_KEYDOWN:
       switch( event.key.keysym.sym ){
+	
+	// moves player based on user input
       case SDLK_LEFT:
 	left_ = true;
 	right_ = false;
@@ -137,10 +154,15 @@ RelevantEvent World::checkForRelevantEvent() noexcept {
       }
       break;
     case SDL_KEYUP:
-      if(currentLevel_ == 0 || currentLevel_ == -1) {
+      if(currentLevel_ == 0 || currentLevel_ == -1 || currentLevel_ == -2) {
+
+	// progresses the game if on a menu screen and spacebar is clicked
 	switch( event.key.keysym.sym ){
 	case SDLK_SPACE:
 	  ++currentLevel_;
+	  if (currentLevel_ == -1) {
+	    ++currentLevel_;
+	  }
 	  level_ = Level(currentLevel_);
 	  player_ = level_.getPlayer();
 	  right_ = false;
@@ -151,6 +173,8 @@ RelevantEvent World::checkForRelevantEvent() noexcept {
 	}
       }	else {
 	switch( event.key.keysym.sym ){
+	  
+	  // stops movement of player based on user input
 	case SDLK_LEFT:
 	  left_ = false;
 	  (player_.lock())->stopH();
@@ -180,25 +204,56 @@ void World::refresh() {
     
     clearBackground();
 
+    // Game over if out of lives
+    
     if(lives_ == 0) {
       currentLevel_ = -1;
       level_ = Level(currentLevel_);
       player_ = level_.getPlayer();
       lives_ = 5;
-      health_ = 3; 
+      health_ = 3;
     }
-    
+    // if on title screen
     if(currentLevel_ == 0) {
       // Draw the title screen
+      
       draw(0, 0, 1080, 720, 1);
-    } else if(currentLevel_ == -1) {
+      score_ = 0; 
+    } // if on game over screen
+    else if(currentLevel_ == -1) {
       // Draw the game over screen
+      
       draw(0, 0, 1080, 720, 10);
+      // Draw score
+      
+      drawText(635, 590, to_string(score_), 2);
+      
+    } // if on win screen
+    else if(currentLevel_ == -2) {
+      // Draw the win screen
+      
+      draw(0, 0, 1080, 720, 11);
+      // Draw score
+      drawText(640, 400, to_string(score_), 3);
+
+      // Draw high score
+      drawText(900, 580, "High Score: " + to_string(highScore_), 2);
+      
     } else {
       
       // Draw the background
       draw(0, 0, 1080, 720, 0);
 
+      // Add to time
+      ++timeCounter_;
+      if(timeCounter_ > 40) {
+	++time_;
+	timeCounter_ = 0;
+      }
+
+      // Draw time
+      drawText(1040, 10, "Time: " + to_string(time_), 1);
+      
       // Draw lives
       for(int x = lives_; x > 0; --x) {
 	draw((x * 55) - 40, 20, 50, 50, 9);
@@ -210,19 +265,8 @@ void World::refresh() {
       }
 
       // Draw score
-      cout << score_ << endl;
-      
-      SDL_Color textColor = { 255, 255, 255, 0 };
-      SDL_Surface* textSurface = TTF_RenderText_Solid(font, to_string(score_).c_str(), textColor);
-      SDL_Texture* text = SDL_CreateTextureFromSurface(renderer_, textSurface);
-      images_.push_back(text);
-      int text_width = textSurface->w;
-      int text_height = textSurface->h;
-      SDL_FreeSurface(textSurface);
-      SDL_Rect destination = { 1040 - text_width, 30, text_width, text_height };
-      SDL_RenderCopy(renderer_, text, NULL, &destination);
-      
-
+      drawText(1040, 60, to_string(score_), 1);
+			 
       // Move the player and all the other sprites
       if(left_) {
 	(player_.lock())->setH(-8);
@@ -246,17 +290,17 @@ void World::refresh() {
 
       // If the player picks up a coin, add score
       if(level_.scored()) {
-	score_ += 15;
+	score_ += 25;
       }
 
-      // If the player is dead reset health, reduce lives and reset player
+      // If the player is dead reset health, reduce lives, lose score and reset player
       if(level_.dead() || health_ <= 0) {
 	--lives_;
 	health_ = 3;
 	level_.resetPlayer();
 	score_ -= 50;
       }
-
+      
       // Draw all of the sprites
 
       for (const shared_ptr<Sprite>& sprite : level_.getList()) {
@@ -300,6 +344,27 @@ void World::refresh() {
     }
     SDL_RenderPresent(renderer_);
   }
+
+  // if the next level is reached proceed to next level or
+  // win screen if last level is reached
+  if(level_.next()) {
+      score_ += 100;
+      if(currentLevel_ == 2) {
+	currentLevel_ = -2;
+	level_ = Level(currentLevel_);
+	player_ = level_.getPlayer();
+	score_ += (lives_ * 50) + (health_ * 10) + (100 - time_);
+	if(highScore_ < score_) {
+	  highScore_ = score_;
+	}
+	lives_ = 5;
+	health_ = 3;
+      } else {
+	++currentLevel_;
+	level_ = Level(currentLevel_);
+	player_ = level_.getPlayer();
+      }
+    }
 }
 
 void World::clearBackground() {
@@ -343,4 +408,15 @@ void World::draw(int x, int y, int width, int height, int index) {
     throw domain_error("Missing image texture at index "
 		       + to_string(index));          
   }
+}
+
+void World::drawText(int x, int y, string text, int size) {
+  SDL_Surface* textSurface = TTF_RenderText_Solid(font_, text.c_str(), textColor_);
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, textSurface);
+  int text_width = textSurface->w * size;
+  int text_height = textSurface->h * size;
+  SDL_FreeSurface(textSurface);
+  SDL_Rect destination = { x - text_width, y, text_width, text_height };
+  SDL_RenderCopy(renderer_, texture, NULL, &destination);
+  SDL_DestroyTexture(texture);
 }

@@ -4,13 +4,17 @@ using namespace std;
 using namespace medieval;
 
 /**
- * @namespace medieval Blah
+ * @namespace medieval This package is a 2D platforming game
+ * titled Torbjorn's bizarre adventure. It features conventional
+ * platforming gameplay with coins and health pickups as well as pits
+ * and obstacles. 
  *
  * @author Alexander Zilbersher
  */
 
 /**
- * The main program for our task. 
+ * The main program for our task. This adds all of our images
+ * and creates our world. It checks for relevant events to exit. 
  * @return the exit status. Normal status is 0. 
  */
 
@@ -34,6 +38,7 @@ int main() {
     world.addImage("graphics/pickupc.bmp");
     world.addImage("graphics/lives.bmp");
     world.addImage("graphics/gameover.bmp");
+    world.addImage("graphics/win.bmp");
 
     // Run until quit.
     
